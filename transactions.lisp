@@ -33,6 +33,12 @@
 		    (setf (value-of tvar) (write-value-of tvar-log)))
 		  (finally (return t))))))))
 
+(defcondition* transaction-fail ()
+  ((transaction-log nil)))
+
+(defun retry-transaction ()
+  (signal 'transaction-fail :transaction-log *transaction-log*))
+
 (defun call-with-transaction (thunk)
   (let ((*transaction-log* (if *top-level-transaction*
 			       (make-hash-table)
@@ -42,3 +48,13 @@
       (if (execute-transaction *transaction-log*)
 	  (values transaction-result t)
 	  (values transaction-result nil)))))
+
+(defmacro with-retry-transaction (&body body)
+  (with-unique-names (thunk t-result t-success)
+    `(let ((thunk #'(lambda ()
+		      ,@body)))
+       (if (null *top-level-transaction*)
+	   (funcall ,thunk)
+	   (iter (for (values ,t-result ,t-success) next (call-with-transaction ,thunk))
+		 (until ,t-success)
+		 (finally (return ,t-result)))))))
