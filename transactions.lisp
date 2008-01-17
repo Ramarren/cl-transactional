@@ -30,7 +30,8 @@
 	    (iter (for (tvar tvar-log) in-hashtable transaction-log)
 		  (unless (eql (write-value-of tvar-log)
 			       (value-of tvar))
-		    (setf (value-of tvar) (write-value-of tvar-log)))
+		    (setf (value-of tvar) (write-value-of tvar-log))
+		    (notify-waitees tvar))
 		  (finally (return t))))))))
 
 (defcondition* transaction-fail ()
@@ -38,6 +39,20 @@
 
 (defun retry-transaction ()
   (signal 'transaction-fail :transaction-log *transaction-log*))
+
+(defgeneric suspend-thread-on-tvars (fail-log)
+  (:method ((fail-log hash-table))
+    (unless (zerop (hash-table-count fail-log))
+     (let ((wait-mutex (make-mutex))
+	   (wait-queue (make-waitqueue))
+	   (tvars (hash-table-keys fail-log)))
+       (with-mutex (wait-mutex)
+	 (iter (for (tvar nil) in-hashtable fail-log)
+	       (with-mutex ((lock-of tvar))
+		 (push (list wait-mutex wait-queue tvars)
+		       (waiting-of tvar))))
+	 (condition-wait wait-queue wait-mutex))))
+    (values nil nil)))
 
 (defun call-with-transaction (thunk)
   (let ((*transaction-log* (if *top-level-transaction*
@@ -47,14 +62,19 @@
     (let ((transaction-result (funcall thunk)))
       (if (execute-transaction *transaction-log*)
 	  (values transaction-result t)
-	  (values transaction-result nil)))))
+	  (signal 'transaction-fail)))))
 
 (defmacro with-retry-transaction (&body body)
   (with-unique-names (thunk t-result t-success)
-    `(let ((thunk #'(lambda ()
+    `(let ((,thunk #'(lambda ()
 		      ,@body)))
        (if (null *top-level-transaction*)
 	   (funcall ,thunk)
-	   (iter (for (values ,t-result ,t-success) next (call-with-transaction ,thunk))
+	   (iter (for (values ,t-result ,t-success) next
+		      (handler-case (call-with-transaction ,thunk)
+			(transaction-fail (fail-log)
+			  (aif fail-log
+			       (suspend-thread-on-tvars it)
+			       (values nil nil)))))
 		 (until ,t-success)
 		 (finally (return ,t-result)))))))
