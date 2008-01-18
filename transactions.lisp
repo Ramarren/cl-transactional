@@ -69,7 +69,8 @@
 		  (make-instance 'tvar-log
 				 :tvar tvar
 				 :read-value (read-value-of tlog)
-				 :write-value (write-value-of tlog)))))))
+				 :write-value (write-value-of tlog)))
+	    (finally (return new-log))))))
 
 (defgeneric merge-log-into (new-log old-log)
   (:method ((new-log hash-table) (old-log hash-table))
@@ -91,7 +92,7 @@
 	    (*wrapping-transaction-logs* (cons *transaction-log* *wrapping-transaction-logs*)))
 	(let ((transaction-result (funcall thunk)))
 	  (if (valid-transaction-p *transaction-log*)
-	      (prog1
+	      (multiple-value-prog1
 		  (values transaction-result t)
 		(merge-log-into *transaction-log* (car *wrapping-transaction-logs*)))
 	      (signal 'transaction-fail))))))
@@ -125,7 +126,7 @@
 	 (finally (if cycle-vars
 		      (return (suspend-thread-on-tvars cycle-vars))
 		      (if *top-level-transaction*
-			  (values nil nil)
+			  (return (values nil nil))
 			  (signal 'transaction-fail)))))))
 
 (defmacro with-orelse-transaction (&body body)
