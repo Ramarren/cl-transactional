@@ -37,7 +37,7 @@
 				   :read-value (read-value-of it)
 				   :write-value (write-value-of it)))
 	      (with-mutex ((lock-of tvar))
-		(pushnew tvar *read-vars*)
+		(pushnew (cons tvar (value-of tvar)) *read-vars* :key #'car)
 		(setf (gethash tvar transaction-log)
 		      (make-instance 'tvar-log
 				     :tvar tvar
