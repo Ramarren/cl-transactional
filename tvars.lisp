@@ -15,8 +15,10 @@
    (print-unreadable-object (object stream :type t)
      (prin1 (value-of object) stream))))
 
-(defun make-tvar (value)
-  (make-instance 'tvar :value value))
+(defun make-tvar (&optional (value nil value-p))
+  (if value-p
+      (make-instance 'tvar :value value)
+      (make-instance 'tvar)))
 
 ;;; transaction-log is as hashtable mapping tvar to tvar-log objects, it is created when transaction is created
 (defvar *transaction-log* nil)
