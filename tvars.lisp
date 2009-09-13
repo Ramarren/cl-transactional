@@ -59,6 +59,12 @@
     (setf (write-value-of (get-tvar-log tvar transaction-log wrapping-logs)) new-value))
   (:documentation "Set value of tvar in transaction"))
 
+(defun tvar-ref (tvar)
+  (get-tvar tvar))
+
+(defun (setf tvar-ref) (new-value tvar)
+  (put-tvar tvar new-value))
+
 (defgeneric notify-waitees (tvar)
   (:method ((tvar tvar))
     (when (waiting-of tvar)
