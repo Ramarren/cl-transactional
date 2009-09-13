@@ -2,4 +2,4 @@
   :components ((:module "tests"
 			:components ((:file "package")
 				     (:file "trivial"))))
-  :depends-on (:cl-transactional :lift :funds))
+  :depends-on (:cl-transactional :stefil :fset :iterate :alexandria))

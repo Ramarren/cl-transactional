@@ -1,9 +1,9 @@
 (defpackage :cl-transactional-tests
-  (:use :cl :sb-thread :iterate :lift :cl-transactional :funds)
-  (:import-from :arnesi :curry :rcurry)
+  (:use :cl :iterate :cl-transactional :alexandria :stefil)
   (:nicknames :tests))
 
 (in-package :cl-transactional-tests)
 
-(deftestsuite cl-transactional-tests ()
-  ())
+(in-suite root-suite)
+
+(defsuite cl-transactional-tests)
