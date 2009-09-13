@@ -74,8 +74,8 @@
             (sb-thread:with-mutex (wait-mutex)
               (iter (for (tvar . tvar-read-value) in fail-tvars)
                     (push (list wait-mutex wait-queue (mapcar #'car fail-tvars))
-                          (waiting-of tvar))))
-            (sb-thread:condition-wait wait-queue wait-mutex)))))
+                          (waiting-of tvar)))
+              (sb-thread:condition-wait wait-queue wait-mutex))))))
     (values nil nil)))
 
 (defgeneric copy-log (old-log)
