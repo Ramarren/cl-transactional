@@ -63,19 +63,21 @@
 (defgeneric suspend-thread-on-tvars (fail-tvars)
   (:method ((fail-tvars list))
     (unless (null fail-tvars)
-      (with-mutexes-spinning (mapcar #'lock-of
-                                     (sort (mapcar #'car fail-tvars)
-                                           #'< :key #'uid-of))
-        ;; if any of the values already changed just retry immediately
-        (when (iter (for (tvar . tvar-read-value) in fail-tvars)
-                    (always (eql tvar-read-value (value-of tvar))))
-          (let ((wait-mutex (sb-thread:make-mutex))
-                (wait-queue (sb-thread:make-waitqueue)))
-            (sb-thread:with-mutex (wait-mutex)
+      (let ((wait-mutex (sb-thread:make-mutex))
+            (wait-queue (sb-thread:make-waitqueue)))
+        (sb-thread:with-mutex (wait-mutex)
+          (with-mutexes-spinning (mapcar #'lock-of
+                                         (sort (mapcar #'car fail-tvars)
+                                               #'< :key #'uid-of))
+            ;; if any of the values already changed just retry immediately
+            (when (iter (for (tvar . tvar-read-value) in fail-tvars)
+                        (always (eql tvar-read-value (value-of tvar))))
+            
+            
               (iter (for (tvar . tvar-read-value) in fail-tvars)
                     (push (list wait-mutex wait-queue (mapcar #'car fail-tvars))
-                          (waiting-of tvar)))
-              (sb-thread:condition-wait wait-queue wait-mutex))))))
+                          (waiting-of tvar)))))
+          (sb-thread:condition-wait wait-queue wait-mutex))))
     (values nil nil)))
 
 (defgeneric copy-log (old-log)
