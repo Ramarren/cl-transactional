@@ -40,7 +40,7 @@
                              :read-value (read-value-of log)
                              :write-value (write-value-of log)))
         (sb-thread:with-recursive-lock ((lock-of tvar))
-          (pushnew (cons tvar (value-of tvar)) *read-vars* :key #'car)
+          (push (cons tvar (value-of tvar)) *read-vars*)
           (setf (gethash tvar transaction-log)
                 (make-instance 'tvar-log
                                :tvar tvar
