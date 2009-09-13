@@ -1,5 +1,5 @@
 (defpackage :cl-transactional
-  (:nicknames :stm)
+    (:nicknames :stm)
   (:export #:make-tvar #:get-tvar #:put-tvar
 	   #:with-retry-transaction #:with-orelse-transaction
 	   #:retry-transaction
