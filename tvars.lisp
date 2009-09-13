@@ -4,7 +4,7 @@
 
 (defclass tvar ()
   ((value   :accessor value-of   :initarg :value :initform nil)
-   (lock    :accessor lock-of    :initarg :lock :initform (sb-thread:make-mutex "TVar lock"))
+   (lock    :accessor lock-of    :initarg :lock :initform (sb-thread:make-mutex :name "TVar lock"))
    (waiting :accessor waiting-of :initarg :waiting :initform nil)
    (uid     :accessor uid-of     :initarg :uid :initform (1- (incf *tvar-uid*)))))
 
