@@ -51,12 +51,16 @@
 
 (defgeneric get-tvar (tvar &optional transaction-log wrapping-logs)
   (:method ((tvar tvar) &optional (transaction-log *transaction-log*) (wrapping-logs *wrapping-transaction-logs*))
-    (write-value-of (get-tvar-log tvar transaction-log wrapping-logs)))
+    (if transaction-log
+        (write-value-of (get-tvar-log tvar transaction-log wrapping-logs))
+        (sb-thread:with-mutex ((lock-of tvar))
+          (value-of tvar))))
   (:documentation "Get value of tvar in transaction."))
 
 (defgeneric put-tvar (tvar new-value &optional transaction-log wrapping-logs)
   (:method ((tvar tvar) new-value &optional (transaction-log *transaction-log*) (wrapping-logs *wrapping-transaction-logs*))
-    (setf (write-value-of (get-tvar-log tvar transaction-log wrapping-logs)) new-value))
+    (sb-thread:with-mutex ((lock-of tvar))
+      (setf (write-value-of (get-tvar-log tvar transaction-log wrapping-logs)) new-value)))
   (:documentation "Set value of tvar in transaction"))
 
 (defun tvar-ref (tvar)
